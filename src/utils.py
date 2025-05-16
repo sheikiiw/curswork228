@@ -1,54 +1,84 @@
-import json
 import logging
-import pandas as pd
-import requests
 from datetime import datetime
-from typing import List, Dict, Any
-from pathlib import Path
 
-logging.basicConfig(level=logging.INFO, filename="app.log", filemode="a",
-                    format="%(asctime)s - %(levelname)s - %(message)s")
+import pandas as pd
 
-def read_transactions(file_path: str) -> pd.DataFrame:
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+def parse_datetime_string(date_string: str) -> datetime:
+    """Преобразует строку даты и времени в объект datetime."""
     try:
-        df = pd.read_excel(file_path)
-        logging.info(f"Successfully read transactions from {file_path}")
-        return df
-    except Exception as e:
-        logging.error(f"Error reading transactions: {e}")
+        parsed_datetime = datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S')
+        logger.info(f"Дата успешно распознана: {parsed_datetime}")
+        return parsed_datetime
+    except ValueError as error:
+        logger.error(f"Ошибка при разборе даты: {error}")
         raise
 
-def get_greeting(dt: datetime) -> str:
-    hour = dt.hour
-    if 6 <= hour < 12:
-        return "Доброе утро"
-    elif 12 <= hour < 18:
-        return "Добрый день"
-    elif 18 <= hour < 24:
-        return "Добрый вечер"
-    else:
-        return "Доброй ночи"
 
-def get_currency_rates(currencies: List[str], api_key: str) -> List[Dict[str, Any]]:
-    rates = []
-    for currency in currencies:
-        try:
-            url = f"https://api.exchangerate-api.com/v4/latest/{currency}"
-            response = requests.get(url, params={"api_key": api_key})
-            data = response.json()
-            rates.append({"currency": currency, "rate": data["rates"]["RUB"]})
-        except Exception as e:
-            logging.error(f"Error fetching currency {currency}: {e}")
-    return rates
+def fetch_api_data(request_date: datetime) -> list[dict]:
+    """Имитация получения данных с API на заданную дату."""
+    try:
+        logger.info(f"Получение данных с API на дату: {request_date.date()}")
+        mock_data = [
+            {"value": 100, "date": str(request_date.date())},
+            {"value": 150, "date": str(request_date.date())},
+            {"value": 200, "date": str(request_date.date())},
+        ]
+        return mock_data
+    except Exception as error:
+        logger.error(f"Ошибка API-запроса: {error}")
+        raise
 
-def get_stock_prices(stocks: List[str], api_key: str) -> List[Dict[str, Any]]:
-    prices = []
-    for stock in stocks:
-        try:
-            url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={stock}&apikey={api_key}"
-            response = requests.get(url)
-            data = response.json()
-            prices.append({"stock": stock, "price": float(data["Global Quote"]["05. price"])})
-        except Exception as e:
-            logging.error(f"Error fetching stock {stock}: {e}")
-    return prices
+
+def process_data(records: list[dict]) -> dict:
+    """Анализирует данные, рассчитывая среднее значение и количество записей."""
+    try:
+        dataframe = pd.DataFrame(records)
+        logger.info("Данные успешно преобразованы в DataFrame")
+
+        if 'value' in dataframe.columns:
+            average_value = dataframe['value'].mean()
+        else:
+            average_value = None
+            logger.warning("Колонка 'value' отсутствует в данных")
+
+        return {
+            "average_value": average_value,
+            "records_count": len(dataframe)
+        }
+    except Exception as error:
+        logger.error(f"Ошибка анализа данных: {error}")
+        raise
+
+
+def load_transactions_file(file_path: str) -> pd.DataFrame:
+    """Загружает данные о транзакциях из Excel-файла и возвращает DataFrame."""
+    try:
+        logger.info(f"Чтение Excel-файла: {file_path}")
+        transactions_df = pd.read_excel(file_path)
+
+        if 'Дата операции' not in transactions_df.columns:
+            logger.error("Колонка 'Дата операции' не найдена в Excel-файле")
+            raise ValueError("Ожидаемая колонка 'Дата операции' отсутствует")
+
+        return transactions_df
+    except Exception as error:
+        logger.error(f"Ошибка загрузки данных: {error}")
+        raise
+
+
+def process_transactions():
+    """Обрабатывает транзакции (заглушка)."""
+    return None
+
+
+if __name__ == "__main__":
+    transactions_dataframe = load_transactions_file("../data/operations.xlsx")
+    print(transactions_dataframe)
+
+
+def load_transactions():
+    return None

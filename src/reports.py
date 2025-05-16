@@ -1,56 +1,86 @@
 import json
-import pandas as pd
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
-import logging
-import functools
+from functools import wraps
+from typing import Callable, Optional
+
+import pandas as pd
 
 
-def save_report(filename: Optional[str] = None):
-    """Decorator to save report output to a file."""
+def save_report(file_name: Optional[str] = None):
+    """
+    Декоратор для сохранения результата функции в JSON-файл.
+    Если имя файла не указано — формируется автоматически на основе имени функции и текущей даты.
+    """
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        def wrapper(*args, **kwargs) -> str:
+            result: str = func(*args, **kwargs)
 
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            result = func(*args, **kwargs)
-            output_file = filename or f"report_{func.__name__}_{datetime.now().strftime('%Y%m%d')}.json"
-            with open(output_file, "w", encoding="utf-8") as f:
-                json.dump(result, f, ensure_ascii=False, indent=2)
-            logging.info(f"Report saved to {output_file}")
+            nonlocal file_name
+            if file_name is None:
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                file_name = f"report_{func.__name__}_{timestamp}.json"
+
+            try:
+                with open(file_name, "w", encoding="utf-8") as file:
+                    file.write(result)
+                print(f"Отчет успешно сохранен в файл: {file_name}")
+            except Exception as error:
+                print(f"Ошибка при сохранении отчета: {error}")
+
             return result
-
         return wrapper
 
+    # Поддержка вызова декоратора с параметром или без
+    if callable(file_name):
+        return decorator(file_name)
     return decorator
 
 
-@save_report()
-def spending_by_category(transactions: pd.DataFrame, category: str, date: Optional[str] = None) -> Dict[str, Any]:
-    logging.info(f"Calculating spending for category {category}")
+@save_report
+def get_category_expenses(dataframe: pd.DataFrame, category: str, start_date: str) -> str:
+    """
+    Функция для формирования отчета о расходах по указанной категории за трехмесячный период.
+    Возвращает результат в формате JSON.
+    """
+    try:
+        start_date_dt = datetime.strptime(start_date, "%Y-%m-%d")
+        end_date = start_date_dt + timedelta(days=90)
+        dataframe["date"] = pd.to_datetime(dataframe["date"])
 
-
-    if date:
-        try:
-            end_date = pd.to_datetime(date)
-        except ValueError:
-            logging.error("Invalid date format")
-            raise ValueError("Date must be in format YYYY-MM-DD")
-    else:
-        end_date = pd.to_datetime(datetime.now())
-
-    start_date = end_date - timedelta(days=90)
-
-    transactions["Дата операции"] = pd.to_datetime(transactions["Дата операции"])
-    df = transactions[
-        (transactions["Категория"] == category) &
-        (transactions["Дата операции"] >= start_date) &
-        (transactions["Дата операции"] <= end_date)
+        filtered_dataframe = dataframe[
+            (dataframe["category"] == category) &
+            (dataframe["date"] >= start_date_dt) &
+            (dataframe["date"] <= end_date)
         ]
 
-    total_spent = df["Сумма платежа"].sum()
+        if filtered_dataframe.empty:
+            return json.dumps({"ошибка": "Нет данных для выбранной категории и периода."}, ensure_ascii=False, indent=4)
 
-    return {
-        "category": category,
-        "total_spent": round(total_spent, 2),
-        "period": f"{start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}"
+        category_expenses = filtered_dataframe.groupby("category")["amount"].sum().reset_index()
+        result = category_expenses.to_dict(orient="records")
+
+        return json.dumps(result, ensure_ascii=False, indent=4)
+
+    except Exception as error:
+        return json.dumps({"ошибка": str(error)}, ensure_ascii=False, indent=4)
+
+
+if __name__ == "__main__":
+    sample_data = {
+        "date": ["2025-01-15", "2025-02-20", "2025-03-10", "2025-03-25", "2025-04-05"],
+        "category": ["Food", "Food", "Transport", "Food", "Food"],
+        "amount": [100, 200, 50, 150, 100],
     }
+
+    transactions_df = pd.DataFrame(sample_data)
+
+    start_date = "2025-01-01"
+    category = "Food"
+    result = get_category_expenses(transactions_df, category, start_date)
+
+    print(result)
+
+
+def category_spending_report():
+    return None
