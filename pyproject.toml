@@ -20,3 +20,13 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry.group.lint.dependencies]
 flake8 = "^7.2.0"
 
+[tool.black]
+line-length = 88
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.mypy]
+strict = true
+ignore_missing_imports = true

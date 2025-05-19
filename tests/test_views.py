@@ -1,78 +1,34 @@
-from datetime import datetime
 from unittest.mock import patch
 
 import pandas as pd
 import pytest
 
-from src.views import (process_data, fetch_api_data, load_transactions_file,
-                       parse_datetime_string)
+from src.views import home_page
 
 
-def test_parse_datetime_valid():
-    """Тест парсинга корректной строки даты."""
-    date_string = "2024-01-01 12:00:00"
-    parsed_datetime = parse_datetime_string(date_string)
-    assert isinstance(parsed_datetime, datetime)
-    assert parsed_datetime.year == 2024
-    assert parsed_datetime.month == 1
-    assert parsed_datetime.day == 1
-
-
-def test_parse_datetime_invalid():
-    """Тест парсинга некорректной строки даты."""
-    with pytest.raises(ValueError):
-        parse_datetime_string("invalid-date")
-
-
-def test_fetch_api_data():
-    """Тест получения данных с API."""
-    request_date = datetime(2024, 1, 1)
-    records = fetch_api_data(request_date)
-    assert isinstance(records, list)
-    assert all('value' in record and 'date' in record for record in records)
-
-
-def test_process_data_valid():
-    """Тест обработки корректных данных."""
-    test_records = [
-        {"value": 100, "date": "2024-01-01"},
-        {"value": 200, "date": "2024-01-01"}
-    ]
-    result = process_data(test_records)
-    assert result["average_value"] == 150
-    assert result["records_count"] == 2
-
-
-def test_process_data_missing_value_column():
-    """Тест обработки данных без колонки 'value'."""
-    test_records = [
-        {"amount": 100, "date": "2024-01-01"}
-    ]
-    result = process_data(test_records)
-    assert result["average_value"] is None
-    assert result["records_count"] == 1
-
-
-@patch('src.views.pd.read_excel')
-def test_load_transactions_valid(mock_read_excel):
-    """Тест успешной загрузки файла транзакций."""
-    mock_dataframe = pd.DataFrame({
-        "Дата операции": ["2024-01-01", "2024-01-02"]
+@pytest.fixture
+def sample_transactions():
+    return pd.DataFrame({
+        "Дата операции": ["2025-05-10", "2025-05-11"],
+        "Номер карты": ["*1234", "*5678"],
+        "Сумма платежа": [1000, 500],
+        "Категория": ["Супермаркеты", "Фастфуд"],
+        "Описание": ["Покупка", "Еда"]
     })
-    mock_read_excel.return_value = mock_dataframe
-
-    transactions_df = load_transactions_file("fake_path.xlsx")
-    assert isinstance(transactions_df, pd.DataFrame)
-    assert "Дата операции" in transactions_df.columns
 
 
-@patch('src.views.pd.read_excel')
-def test_load_transactions_missing_column(mock_read_excel):
-    """Тест ошибки при отсутствии колонки 'Дата операции'."""
-    mock_dataframe = pd.DataFrame({
-        "Другой столбец": ["2024-01-01"]
-    })
-    mock_read_excel.return_value = mock_dataframe
+@patch("src.views.read_transactions")
+@patch("src.views.get_currency_rates")
+@patch("src.views.get_stock_prices")
+def test_home_page(mock_stocks, mock_currencies, mock_read, sample_transactions):
+    mock_read.return_value = sample_transactions
+    mock_currencies.return_value = [{"currency": "USD", "rate": 73.21}]
+    mock_stocks.return_value = [{"stock": "AAPL", "price": 150.12}]
 
-    with pytest.raises(ValueError):
-        load_transactions_file("fake_path.xlsx")
+    result = home_page("2025-05-14 14:00:00")
+
+    assert result["greeting"] == "Добрый день"
+    assert len(result["cards"]) == 2
+    assert result["cards"][0]["last_digits"] == "1234"
+    assert result["cards"][0]["total_spent"] == 1000
+    assert result["cards"][0]["cashback"] == 10

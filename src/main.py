@@ -1,19 +1,15 @@
-from src.views import display_home_page
-from src.services import investment_banking_service
-from src.reports import category_spending_report
-import pandas as pd
-from src.utils import load_transactions
+from src.reports import spending_by_category
+from src.services import investment_bank
+from src.utils import read_transactions
+from src.views import home_page
 
 
 def main():
-    transactions_df = load_transactions("data/operations.xlsx")
-
-    print("Home Page:", display_home_page("2025-05-14 14:00:00"))
-
-    transaction_records = transactions_df.to_dict(orient="records")
-    print("Investment Banking:", investment_banking_service("2025-05", transaction_records, 50))
-
-    print("Category Spending:", category_spending_report(transactions_df, "Супермаркеты"))
+    df = read_transactions("data/operations.xlsx")
+    print("Home Page:", home_page("2025-05-14 14:00:00"))
+    transactions = df.to_dict(orient="records")
+    print("Investment Bank:", investment_bank("2025-05", transactions, 50))
+    print("Spending by Category:", spending_by_category(df, "Супермаркеты"))
 
 
 if __name__ == "__main__":
