@@ -1,9 +1,16 @@
-import pytest
-import pandas as pd
-from unittest.mock import patch, Mock
-from src.utils import read_transactions, get_greeting, get_currency_rates, get_stock_prices
+import os
 from datetime import datetime
-import logging
+from unittest.mock import Mock, patch
+
+import pandas as pd
+import pytest
+
+from src.utils import (
+    get_currency_rates,
+    get_greeting,
+    get_stock_prices,
+    read_transactions,
+)
 
 
 # Фикстура для тестового DataFrame
@@ -34,7 +41,8 @@ def test_read_transactions_success(mock_read_excel, sample_dataframe, tmp_path):
 @patch("pandas.read_excel")
 def test_read_transactions_file_not_found(mock_read_excel):
     # Подготовка
-    mock_read_excel.side_effect = FileNotFoundError("File not found")
+    mock_get = mock_read_excel
+    mock_get.side_effect = FileNotFoundError("File not found")
 
     # Проверка
     with pytest.raises(FileNotFoundError, match="File not found"):
@@ -85,38 +93,42 @@ def test_get_currency_rates_success(mock_get):
     mock_response = Mock()
     mock_response.json.return_value = {"rates": {"RUB": 73.21}}
     mock_get.return_value = mock_response
+    # Установка переменной окружения для теста
+    with patch.dict(os.environ, {"EXCHANGE_RATE_API_KEY": "test_api_key"}):
+        # Вызов
+        result = get_currency_rates(["USD"])
 
-    # Вызов
-    result = get_currency_rates(["USD"], "test_api_key")
-
-    # Проверки
-    assert result == [{"currency": "USD", "rate": 73.21}]
-    mock_get.assert_called_once_with(
-        "https://api.exchangerate-api.com/v4/latest/USD",
-        params={"api_key": "test_api_key"}
-    )
+        # Проверки
+        assert result == [{"currency": "USD", "rate": 73.21}]
+        mock_get.assert_called_once_with(
+            "https://api.exchangerate-api.com/v4/latest/USD",
+            params={"api_key": "test_api_key"}
+        )
 
 
 @patch("src.utils.requests.get")
 def test_get_currency_rates_api_error(mock_get):
     # Подготовка
     mock_get.side_effect = Exception("API error")
+    # Установка переменной окружения для теста
+    with patch.dict(os.environ, {"EXCHANGE_RATE_API_KEY": "test_api_key"}):
+        # Вызов
+        result = get_currency_rates(["USD"])
 
-    # Вызов
-    result = get_currency_rates(["USD"], "test_api_key")
-
-    # Проверки
-    assert result == []  # Пустой список при ошибке
+        # Проверки
+        assert result == []  # Пустой список при ошибке
 
 
 @patch("src.utils.logging.error")
 def test_get_currency_rates_logging(mock_error):
     # Подготовка
     with patch("src.utils.requests.get", side_effect=Exception("API error")):
-        # Вызов
-        get_currency_rates(["USD"], "test_api_key")
-        # Проверка
-        mock_error.assert_called_with("Error fetching currency USD: API error")
+        # Установка переменной окружения для теста
+        with patch.dict(os.environ, {"EXCHANGE_RATE_API_KEY": "test_api_key"}):
+            # Вызов
+            get_currency_rates(["USD"])
+            # Проверка
+            mock_error.assert_called_with("Error fetching currency USD: API error")
 
 
 # Тесты для get_stock_prices
@@ -126,34 +138,38 @@ def test_get_stock_prices_success(mock_get):
     mock_response = Mock()
     mock_response.json.return_value = {"Global Quote": {"05. price": "150.12"}}
     mock_get.return_value = mock_response
+    # Установка переменной окружения для теста
+    with patch.dict(os.environ, {"ALPHA_VANTAGE_API_KEY": "test_api_key"}):
+        # Вызов
+        result = get_stock_prices(["AAPL"])
 
-    # Вызов
-    result = get_stock_prices(["AAPL"], "test_api_key")
-
-    # Проверки
-    assert result == [{"stock": "AAPL", "price": 150.12}]
-    mock_get.assert_called_once_with(
-        "https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=AAPL&apikey=test_api_key"
-    )
+        # Проверки
+        assert result == [{"stock": "AAPL", "price": 150.12}]
+        mock_get.assert_called_once_with(
+            "https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=AAPL&apikey=test_api_key"
+        )
 
 
 @patch("src.utils.requests.get")
 def test_get_stock_prices_api_error(mock_get):
     # Подготовка
     mock_get.side_effect = Exception("API error")
+    # Установка переменной окружения для теста
+    with patch.dict(os.environ, {"ALPHA_VANTAGE_API_KEY": "test_api_key"}):
+        # Вызов
+        result = get_stock_prices(["AAPL"])
 
-    # Вызов
-    result = get_stock_prices(["AAPL"], "test_api_key")
-
-    # Проверки
-    assert result == []  # Пустой список при ошибке
+        # Проверки
+        assert result == []  # Пустой список при ошибке
 
 
 @patch("src.utils.logging.error")
 def test_get_stock_prices_logging(mock_error):
     # Подготовка
     with patch("src.utils.requests.get", side_effect=Exception("API error")):
-        # Вызов
-        get_stock_prices(["AAPL"], "test_api_key")
-        # Проверка
-        mock_error.assert_called_with("Error fetching stock AAPL: API error")
+        # Установка переменной окружения для теста
+        with patch.dict(os.environ, {"ALPHA_VANTAGE_API_KEY": "test_api_key"}):
+            # Вызов
+            get_stock_prices(["AAPL"])
+            # Проверка
+            mock_error.assert_called_with("Error fetching stock AAPL: API error")

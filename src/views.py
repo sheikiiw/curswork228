@@ -1,12 +1,20 @@
 import json
-from datetime import datetime
-import pandas as pd
-from typing import Dict, Any
-from src.utils import read_transactions, get_greeting, get_currency_rates, get_stock_prices
 import logging
+from datetime import datetime
+from typing import Any, Dict
+
+import pandas as pd
+
+from src.utils import (
+    get_currency_rates,
+    get_greeting,
+    get_stock_prices,
+    read_transactions,
+)
 
 
 def home_page(date_time: str) -> Dict[str, Any]:
+    """Генерирует данные для домашней страницы на основе даты и настроек пользователя"""
     logging.info(f"Generating Home page response for {date_time}")
 
     try:
@@ -14,16 +22,15 @@ def home_page(date_time: str) -> Dict[str, Any]:
     except ValueError:
         logging.error("Invalid date format")
         raise ValueError("Date must be in format YYYY-MM-DD HH:MM:SS")
-    with open("user_settings.json") as f:
+    file_path = "C:/Users/Glukhova.M/PycharmProjects/curswork228/user_settings.json"
+    with open(file_path) as f:
         settings = json.load(f)
 
+    df = read_transactions("../data/operations.xlsx")
 
-    df = read_transactions("data/operations.xlsx")
-
-    df["Дата операции"] = pd.to_datetime(df["Дата операции"])
+    adf = pd.to_datetime(df["Дата операции"], format="%d.%m.%Y %H:%M:%S")
     start_date = dt.replace(day=1, hour=0, minute=0, second=0)
-    df = df[(df["Дата операции"] >= start_date) & (df["Дата операции"] <= dt)]
-
+    df = df[(adf >= start_date) & (adf <= dt)]
 
     cards = []
     for card in df["Номер карты"].unique():
@@ -41,8 +48,8 @@ def home_page(date_time: str) -> Dict[str, Any]:
         ["Дата операции", "Сумма платежа", "Категория", "Описание"]
     ].to_dict(orient="records")
 
-    currency_rates = get_currency_rates(settings["user_currencies"], "your_api_key")
-    stock_prices = get_stock_prices(settings["user_stocks"], "your_api_key")
+    currency_rates = get_currency_rates(settings["user_currencies"])
+    stock_prices = get_stock_prices(settings["user_stocks"])
 
     return {
         "greeting": get_greeting(dt),

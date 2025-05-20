@@ -1,8 +1,9 @@
+from typing import Any, Dict, List
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import patch, Mock
+
 from src.services import investment_bank
-from datetime import datetime
-from typing import List, Dict, Any
 
 
 # Фикстура для тестовых транзакций
@@ -28,9 +29,9 @@ def sample_transactions() -> List[Dict[str, Any]]:
 @pytest.mark.parametrize(
     "limit, expected_saved",
     [
-        (10, 7.25),  # 1712.50 -> 1713 (0.50), 123.75 -> 124 (0.25), 0.50 + 0.25 = 0.75
-        (50, 37.25),  # 1712.50 -> 1750 (37.50), 123.75 -> 150 (26.25), 37.50 + 26.25 = 63.75
-        (100, 87.25),  # 1712.50 -> 1800 (87.50), 123.75 -> 200 (76.25), 87.50 + 76.25 = 163.75
+        (10, 13.75),  # 1712.50 -> 1713 (0.50), 123.75 -> 124 (0.25), 0.50 + 0.25 = 0.75
+        (50, 63.75),  # 1712.50 -> 1750 (37.50), 123.75 -> 150 (26.25), 37.50 + 26.25 = 63.75
+        (100, 163.75),  # 1712.50 -> 1800 (87.50), 123.75 -> 200 (76.25), 87.50 + 76.25 = 163.75
     ],
 )
 def test_investment_bank_correct_calculation(sample_transactions, limit, expected_saved):

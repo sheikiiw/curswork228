@@ -1,14 +1,14 @@
-import json
-from datetime import datetime
-from typing import List, Dict, Any
 import logging
+from datetime import datetime
+from typing import Any, Dict, List
 
 
 def investment_bank(month: str, transactions: List[Dict[str, Any]], limit: int) -> Dict[str, float]:
+    """Рассчитывает сумму для инвестиционного банка за указанный месяц"""
     logging.info(f"Calculating Investment Bank for {month} with limit {limit}")
 
     try:
-        month_dt = datetime.strptime(month, "%Y-%m")
+        month = datetime.strptime(month, "%Y-%m")
     except ValueError:
         logging.error("Invalid month format")
         raise ValueError("Month must be in format YYYY-MM")
@@ -20,7 +20,6 @@ def investment_bank(month: str, transactions: List[Dict[str, Any]], limit: int) 
     total_saved = sum(
         (limit - (t["Сумма операции"] % limit)) % limit
         for t in transactions
-        if datetime.strptime(t["Дата операции"], "%Y-%m-%d").strftime("%Y-%m") == month
-    )
+        if datetime.strptime(t["Дата операции"], "%Y-%m-%d").strftime("%Y-%m") == month.strftime("%Y-%m"))
 
     return {"total_saved": round(total_saved, 2)}
