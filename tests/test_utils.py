@@ -1,12 +1,16 @@
+import os
 from datetime import datetime
 from unittest.mock import Mock, patch
 
 import pandas as pd
 import pytest
-import os
 
-from src.utils import (get_currency_rates, get_greeting, get_stock_prices,
-                       read_transactions)
+from src.utils import (
+    get_currency_rates,
+    get_greeting,
+    get_stock_prices,
+    read_transactions,
+)
 
 
 # Фикстура для тестового DataFrame
@@ -169,4 +173,3 @@ def test_get_stock_prices_logging(mock_error):
             get_stock_prices(["AAPL"])
             # Проверка
             mock_error.assert_called_with("Error fetching stock AAPL: API error")
-

@@ -5,7 +5,7 @@ from src.views import home_page
 
 
 def main():
-    df = read_transactions("data/operations.xlsx")
+    df = read_transactions("../data/operations.xlsx")
     print("Home Page:", home_page("2025-05-14 14:00:00"))
     transactions = df.to_dict(orient="records")
     print("Investment Bank:", investment_bank("2025-05", transactions, 50))

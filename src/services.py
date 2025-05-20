@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
 
 def investment_bank(month: str, transactions: List[Dict[str, Any]], limit: int) -> Dict[str, float]:
     """Рассчитывает сумму для инвестиционного банка за указанный месяц"""
@@ -19,7 +20,6 @@ def investment_bank(month: str, transactions: List[Dict[str, Any]], limit: int) 
     total_saved = sum(
         (limit - (t["Сумма операции"] % limit)) % limit
         for t in transactions
-        if datetime.strptime(t["Дата операции"], "%d.%m.%Y %H:%M:%S").strftime("%Y-%m") == month
-    )
+        if datetime.strptime(t["Дата операции"], "%Y-%m-%d").strftime("%Y-%m") == month.strftime("%Y-%m"))
 
     return {"total_saved": round(total_saved, 2)}

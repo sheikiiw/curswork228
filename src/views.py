@@ -5,8 +5,12 @@ from typing import Any, Dict
 
 import pandas as pd
 
-from src.utils import (get_currency_rates, get_greeting, get_stock_prices,
-                       read_transactions)
+from src.utils import (
+    get_currency_rates,
+    get_greeting,
+    get_stock_prices,
+    read_transactions,
+)
 
 
 def home_page(date_time: str) -> Dict[str, Any]:
@@ -18,15 +22,15 @@ def home_page(date_time: str) -> Dict[str, Any]:
     except ValueError:
         logging.error("Invalid date format")
         raise ValueError("Date must be in format YYYY-MM-DD HH:MM:SS")
-
-    with open("user_settings.json") as f:
+    file_path = "C:/Users/Glukhova.M/PycharmProjects/curswork228/user_settings.json"
+    with open(file_path) as f:
         settings = json.load(f)
 
-    df = read_transactions("data/operations.xlsx")
+    df = read_transactions("../data/operations.xlsx")
 
-    df["Дата операции"] = pd.to_datetime(df["Дата операции"])
+    adf = pd.to_datetime(df["Дата операции"], format="%d.%m.%Y %H:%M:%S")
     start_date = dt.replace(day=1, hour=0, minute=0, second=0)
-    df = df[(df["Дата операции"] >= start_date) & (df["Дата операции"] <= dt)]
+    df = df[(adf >= start_date) & (adf <= dt)]
 
     cards = []
     for card in df["Номер карты"].unique():

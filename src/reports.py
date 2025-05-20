@@ -9,6 +9,7 @@ import pandas as pd
 
 def save_report(filename: Optional[str] = None):
     """Декоратор для сохранения отчета в файл"""
+
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -42,9 +43,9 @@ def spending_by_category(transactions: pd.DataFrame, category: str, date: Option
 
     transactions["Дата операции"] = pd.to_datetime(transactions["Дата операции"])
     df = transactions[
-        (transactions["Категория"] == category) &
-        (transactions["Дата операции"] >= start_date) &
-        (transactions["Дата операции"] <= end_date)
+        (transactions["Категория"] == category)
+        & (transactions["Дата операции"] >= start_date)
+        & (transactions["Дата операции"] <= end_date)
     ]
 
     total_spent = df["Сумма платежа"].sum()
@@ -54,4 +55,3 @@ def spending_by_category(transactions: pd.DataFrame, category: str, date: Option
         "total_spent": round(total_spent, 2),
         "period": f"{start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}"
     }
-

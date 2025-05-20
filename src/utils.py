@@ -9,6 +9,7 @@ import requests
 logging.basicConfig(level=logging.INFO, filename="app.log", filemode="a",
                     format="%(asctime)s - %(levelname)s - %(message)s")
 
+
 def read_transactions(file_path: str) -> pd.DataFrame:
     try:
         df = pd.read_excel(file_path)
@@ -17,6 +18,7 @@ def read_transactions(file_path: str) -> pd.DataFrame:
     except Exception as e:
         logging.error(f"Error reading transactions: {e}")
         raise
+
 
 def get_greeting(dt: datetime) -> str:
     hour = dt.hour
